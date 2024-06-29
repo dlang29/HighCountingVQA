@@ -3,7 +3,7 @@ import numpy as np
 
 import os
 
-def create_bar_plots(x, Y, labels=None, save_name="barplots.png"):
+def create_bar_plots(x, Y, labels=None, output_path="barplots.png"):
     """
     Create a figure with multiple bar plots. 
     
@@ -11,7 +11,7 @@ def create_bar_plots(x, Y, labels=None, save_name="barplots.png"):
     x: Shared x-values for the barplots, shape (num_data_points, )
     Y: Set of y-values for the barplots, shape (num_plots, num_datapoints)
     labels: Optional dictionary to set labels {'x_label': 'x-axis label', 'y_label': 'y-axis label', title': 'title name', 'subtitles': ['model1', 'model2',...]}
-    save_name: Name of the created figure
+    output_path: Where to store the created figure
     """
 
     num_plots = Y.shape[0]
@@ -37,11 +37,11 @@ def create_bar_plots(x, Y, labels=None, save_name="barplots.png"):
     fig.suptitle(title)
     plt.tight_layout()
     
-    plt.savefig(os.path.join("./data/plots", save_name))
+    plt.savefig(output_path)
 
 
 
-def create_dual_axis_bar_plots(x, Y, labels=None, save_name="dual_barplots.png"):
+def create_dual_axis_bar_plots(x, Y, labels=None, output_path="dual_barplots.png"):
     """
     Create a figure with 2 barplots per axis. 
     
@@ -49,7 +49,7 @@ def create_dual_axis_bar_plots(x, Y, labels=None, save_name="dual_barplots.png")
     x: Shared x-values for the barplots, shape (num_data_points, )
     Y: Set of y-values for the barplots, shape (num_plots, 2, num_datapoints)
     labels: Optional dictionary to set labels {'x_label': 'x-axis label', 'y_label': 'y-axis label', 'y_label2': '2. y-axis label', title': 'title name', 'subtitles': ['model1', 'model2',...]}
-    save_name: Name of the created figure
+    output_path: Where to store the created figure
     """
 
     num_plots = Y.shape[0]
@@ -86,4 +86,4 @@ def create_dual_axis_bar_plots(x, Y, labels=None, save_name="dual_barplots.png")
     fig.suptitle(title)
     plt.tight_layout()
     
-    plt.savefig(os.path.join("./data/plots", save_name))
+    plt.savefig(output_path)
