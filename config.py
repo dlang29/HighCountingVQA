@@ -1,11 +1,18 @@
 import torch
 
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 NUM_WORKERS = 4
 
 DEVICE = "cuda:0" if torch.cuda.is_available() else 'cpu'
-MODEL_ID = "Salesforce/blip-vqa-base"
-IMG_SIZE = (384, 384) # for BLIP
+
+# MODEL_ID = "Salesforce/blip-vqa-base"
+MODEL_ID = "google/paligemma-3b-mix-224"
+# Whether also input is outputted or not
+SKIP_INPUT = True
+HF_TOKEN = "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"
+
+# (384, 384) # for BLIP
+IMG_SIZE = (224, 224)
 
 DATA_ROOT = "/teamspace/uploads"
 JSON_FILE = "./data/HighCountVQA_val.json"

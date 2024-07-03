@@ -1,34 +1,87 @@
-import matplotlib.pyplot as plt
-import numpy as np
-
 import os
-
+import json
+import config
+import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix
 import seaborn as sns
+from utils import get_csv
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 
-def plot_function(bin_df, results_df, test_set_length, config):
-    total_count = (results_df["prediction"]==results_df["answers"]).sum()
-    # Calculate Total Accuracy
-    print(f'Total Accuracy: {(total_count / test_set_length) * 100}%')
-    for i in range(config.MAX_OBJ_NUMBER):
-        print(f'Accuracy for {i+1} objects: {bin_df.loc[i+1, 'bin_acc']}%')
+def plot_function(bin_dfs, results_dfs, model_names, test_set_length):
+    """
+    Call Plot functions based on evaluation data
+    
+    Params:
+    bin_dfs: Array with bin metrics for every model
+    results_df: Array with all evaluation predictions per model
+    model_names: Different names of the models to use for the plots
+    test_set_length: Length of the test dataset
+    """
+
+    for (model_name, bin_df, results_df) in zip(model_names, bin_dfs, results_dfs):
+        total_count = (results_df["formatted_pred"]==results_df["real_answer"]).sum()
+        # Calculate Total Accuracy
+        print(f'Model: {model_name}')
+        print(f'Total Accuracy: {(total_count / test_set_length) * 100}%')
+        for i in range(0, config.MAX_OBJ_NUMBER + 1):
+            print(f'Accuracy for {i} objects: {bin_df.loc[i, "bin_acc"]}%')
     
     os.makedirs(config.PLOT_DATA_PATH, exist_ok=True)
-    x = np.arange(1, config.MAX_OBJ_NUMBER + 1)
-
-    # Plotting Total Occurrences
-    label_dict = {'x_label': 'Number of Objects', 'y_label': 'Total Occurrences', 'title': 'Total data distribution', 'subtitles': ['BLIP-VQA-Base', 'BLIP-VQA-Base']}
-    create_bar_plots(x=x, Y=np.vstack((bin_df['bin_count'].values, bin_df['bin_count'].values)), labels=label_dict, output_path=os.path.join(config.PLOT_DATA_PATH, "distribution.png"))
-
+    x = np.arange(0, config.MAX_OBJ_NUMBER + 1)
+    
     # Plotting Accuracy
-    label_dict.update({'y_label': 'Accuracy', 'title': 'Accuracy over individual numbers of objects'})
-    create_bar_plots(x=x, Y=np.vstack((bin_df['bin_acc'].values, bin_df['bin_acc'].values)), labels=label_dict, output_path=os.path.join(config.PLOT_DATA_PATH, "accuracy.png"))
+    label_dict = {'x_label': 'Number of Objects', 'y_label': 'Accuracy',  'title': 'Accuracy over individual numbers of objects', 'subtitles': model_names}
+    create_bar_plots(x=x, Y=np.vstack([bin_df['bin_acc'].values for bin_df in bin_dfs]), labels=label_dict, output_path=os.path.join(config.PLOT_DATA_PATH, "accuracy.png"))
 
     # Plotting Average Absolute Error and NaN Outputs
     label_dict.update({'y_label': 'Average Absolute Error', 'y_label2': 'NaN Outputs', 'title': 'Average Absolute Error and NaN Outputs for every number of objects'})
-    dual_data = np.vstack((bin_df['bin_avg_abs_err'].values, bin_df['nan_count'].values))[None, :, :]
-    create_dual_axis_bar_plots(x=x, Y=np.vstack((dual_data, dual_data)), labels=label_dict, output_path=os.path.join(config.PLOT_DATA_PATH, "abs_error.png"))
+    dual_data = [np.vstack((bin_df['bin_avg_abs_err'].values, bin_df['nan_count'].values))[None, :, :] for bin_df in bin_dfs]
+    create_dual_axis_bar_plots(x=x, Y=np.vstack(dual_data), labels=label_dict, output_path=os.path.join(config.PLOT_DATA_PATH, "abs_error.png"))
+
+def create_data_distribution(dataset_name = config.JSON_FILE):
+    with open(dataset_name, 'r') as file:
+      data = json.load(file)
+    df = pd.DataFrame(data)
+    label_counts = df['answer'].value_counts().sort_index()
+    plt.figure(figsize=(10, 6))
+    bars = label_counts.plot(kind='bar', color='skyblue')
+    plt.title('Count of Each Label in answer Column')
+    plt.xlabel('Label')
+    plt.ylabel('Count')
+    plt.xticks(rotation=45)
+    for bar in bars.patches:
+        bars.annotate(format(bar.get_height(), '.0f'), (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                    ha = 'center', va = 'center', size = 12, xytext = (0, 8), textcoords = 'offset points')
+    plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name.split("/")[2].split(".")[0]+"_distribution.png"))
+
+def create_data_distributions(filenames):
+    combined_label_counts = {}
+    print(filenames)
+    for filename in filenames:
+        print(filename)
+        with open(filename, 'r') as file:
+            data = json.load(file)
+        df = pd.DataFrame(data)
+        label_counts = df['answer'].value_counts().sort_index()
+        combined_label_counts[os.path.basename(filename)] = label_counts
+
+    combined_df = pd.DataFrame(combined_label_counts).fillna(0)
+    
+    combined_df.plot(kind='bar', figsize=(15, 8))
+    
+    plt.title('Count of Each Label in answer Column for Multiple Datasets')
+    plt.xlabel('Label')
+    plt.ylabel('Count')
+    plt.xticks(rotation=45)
+    
+    for dataset in combined_df.columns:
+        for i, count in enumerate(combined_df[dataset]):
+            plt.text(i, count + 0.05, int(count), ha='center', va='bottom', fontsize=10, rotation=90)
+    
+    plt.legend(title='Datasets')
+    plt.tight_layout()
+    plt.savefig(os.path.join(config.PLOT_DATA_PATH, "combined_distribution"+"".join(filenames).replace("/","")+".png"))
 
 def create_bar_plots(x, Y, labels=None, output_path="barplots.png"):
     """
@@ -65,7 +118,6 @@ def create_bar_plots(x, Y, labels=None, output_path="barplots.png"):
     plt.tight_layout()
     
     plt.savefig(output_path)
-
 
 
 def create_dual_axis_bar_plots(x, Y, labels=None, output_path="dual_barplots.png"):
@@ -115,17 +167,11 @@ def create_dual_axis_bar_plots(x, Y, labels=None, output_path="dual_barplots.png
     
     plt.savefig(output_path)
 
-def create_confusion_matrices(model_id, evaluation_path, plot_path):
-    # Load the CSV file
-    file_path = './data/evaluation/blip.csv'
-    output_path = './data/plots/confusion_matrices.png'
-
-    data = pd.read_csv(file_path)
-
+def create_confusion_matrices(data, output_path):
     # Extract the relevant columns
     real_answers = data['real_answer'].astype(str)
-    formatted_predictions = data['formatted_prediction'].astype(str)
-    non_formatted_predictions = data['non_formatted_prediction'].astype(str)
+    formatted_predictions = data['formatted_pred'].astype(str)
+    non_formatted_predictions = data['prediction'].astype(str)
 
     count = 25
 
@@ -197,3 +243,24 @@ def create_confusion_matrices(model_id, evaluation_path, plot_path):
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
+
+
+if __name__ == "__main__":
+    create_data_distribution("./data/tallyqa.json")
+    create_data_distribution("./data/HighCountVQA_val.json")
+    create_data_distribution("./data/HighCountVQA_test.json")
+    create_data_distribution("./data/HighCountVQA_train.json")
+    create_data_distribution("./data/HighCountVQA_combined.json")
+    create_data_distributions( ["./data/HighCountVQA_val.json",
+                                "./data/HighCountVQA_test.json",
+                                "./data/HighCountVQA_train.json"])
+    create_data_distributions( ["./data/tallyqa.json",
+                                "./data/HighCountVQA_combined.json"])
+
+    results_df_blip = get_csv("results", "Salesforce/blip-vqa-base")
+    bin_df_blip = get_csv("bin", "Salesforce/blip-vqa-base")
+    results_df_pali = get_csv("results", "google/paligemma-3b-mix-224")
+    bin_df_pali = get_csv("bin", "google/paligemma-3b-mix-224")
+    plot_function([bin_df_blip, bin_df_pali], [results_df_blip, results_df_pali], ['BLIP-VQA-Base', 'PaliGemma-3b-mix'], len(results_df_blip))
+    create_confusion_matrices(results_df_blip, "data/plots/confusion_matrices_blip.png")
+    create_confusion_matrices(results_df_pali, "data/plots/confusion_matrices_pali.png")

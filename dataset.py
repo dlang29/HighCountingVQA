@@ -1,12 +1,13 @@
 from torch import DeserializationStorageContext
 from torchvision import transforms
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 from PIL import Image
 import json
 import os
+import config
 
-def get_dataset(config):
+def get_dataset():
   # declare all necessary components (here just for inference)
   transform = transforms.Compose([
       transforms.Resize(config.IMG_SIZE),

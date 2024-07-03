@@ -1,4 +1,4 @@
-image_path,question,real_answer,formatted_prediction,non_formatted_prediction
+image_path,question,real_answer,formatted_pred,prediction
 imported_genome,How many people are pictured?,4,4,4
 imported_genome,How many people are in the picture?,1,1,1
 imported_genome,How many planes are in the photo?,1,1,1
