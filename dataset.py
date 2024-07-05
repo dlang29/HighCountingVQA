@@ -7,20 +7,20 @@ import json
 import os
 import config
 
-def get_dataset():
+def get_dataset(data_root, json_file, batch_size):
   # declare all necessary components (here just for inference)
   transform = transforms.Compose([
       transforms.Resize(config.IMG_SIZE),
       transforms.ToTensor()
   ])
-  test_set = HighCountVQADataset(data_root=config.DATA_ROOT,
-                                json_file=config.JSON_FILE,
+  test_set = HighCountVQADataset(data_root=data_root,
+                                json_file=json_file,
                                 transform=transform)
   test_loader = DataLoader(test_set,
-                          batch_size=config.BATCH_SIZE, shuffle=False, num_workers=config.NUM_WORKERS)
+                          batch_size=batch_size, shuffle=False, num_workers=config.NUM_WORKERS)
 
   test_set_length = len(test_set)
-  total_iterations = int(test_set_length / config.BATCH_SIZE)
+  total_iterations = int(test_set_length / batch_size)
   return test_set_length, total_iterations, test_loader
 
 

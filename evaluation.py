@@ -8,15 +8,17 @@ from dataset import get_dataset
 from utils import write_to_csv, get_csv, calculate_metrics
 from transformers import AutoProcessor, AutoModelForVisualQuestionAnswering, AutoModel, PaliGemmaForConditionalGeneration
 
-test_set_length, total_iterations, test_loader = get_dataset(config)
+test_set_length, total_iterations, test_loader = get_dataset(config.DATA_ROOT, config.JSON_FILE, config.BATCH_SIZE)
 
 # Blip specific loading
 # processor instead of tokenizer -> contains BERT tokenizer + BLIP image processor
 processor = AutoProcessor.from_pretrained(config.MODEL_ID, do_rescale=False, token = config.HF_TOKEN) #do_rescale false, because ToTensor() already does that
-model = PaliGemmaForConditionalGeneration.from_pretrained(config.MODEL_ID, token = config.HF_TOKEN, torch_dtype=torch.bfloat16).to(config.DEVICE)
+# model = PaliGemmaForConditionalGeneration.from_pretrained(config.MODEL_ID, token = config.HF_TOKEN, torch_dtype=torch.bfloat16).to(config.DEVICE)
+model = AutoModelForVisualQuestionAnswering.from_pretrained(config.MODEL_ID, token = config.HF_TOKEN, torch_dtype=torch.bfloat16).to(config.DEVICE)
 
 # Initialize a dictionary to hold all data
-data_collection = {"image_path": [],"question": [],"real_answer": [],"formatted_pred": [],"prediction": []}
+data_collection = {"image_path": []
+,"question": [],"real_answer": [],"formatted_pred": [],"prediction": []}
 
 
 with torch.no_grad():
