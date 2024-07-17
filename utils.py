@@ -4,6 +4,7 @@ import os
 import pandas as pd
 
 def get_filename(name, model_id=config.MODEL_ID, trained = config.TRAINED):
+    """Get standardized filename based on config."""
     if trained:
         model_id = model_id + "_trained"
     filename = (model_id+config.JSON_FILE.split(".")[1]+"_"+name+'.csv').replace("/","_")

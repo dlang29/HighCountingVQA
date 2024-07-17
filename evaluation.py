@@ -15,6 +15,7 @@ print(test_set_length, total_iterations)
 # processor instead of tokenizer -> contains BERT tokenizer + BLIP image processor
 processor = AutoProcessor.from_pretrained(config.MODEL_ID, do_rescale=False, token = config.HF_TOKEN) #do_rescale false, because ToTensor() already does that
 
+# differentiate between model types and pre-trained/fine-tuned
 if config.TRAINED:
     if 'pali' in config.MODEL_ID:
         model = PaliGemmaForConditionalGeneration.from_pretrained(config.BEST_CHECKPOINT, token = config.HF_TOKEN, torch_dtype=torch.bfloat16).to(config.DEVICE)
@@ -42,6 +43,7 @@ with torch.no_grad():
         input_len = inputs["input_ids"].shape[-1]
 
         outputs = model.generate(**inputs, max_new_tokens=32)
+        # dependent on the used model it may also output the input
         if config.SKIP_INPUT:
             outputs = outputs[:, input_len:]
         predictions = processor.batch_decode(outputs, skip_special_tokens=True)
@@ -53,11 +55,9 @@ with torch.no_grad():
         data_collection['formatted_pred'].extend(formatted_predictions)
         data_collection['prediction'].extend(predictions)
 
+# convert accumulated data to a datadrame and save for later processing
 results_df = pd.DataFrame(data_collection)
 results_df['real_answer'] = results_df['real_answer'].astype(int)
 results_df['formatted_pred'] = results_df['formatted_pred'].astype(int)
-# why pass config module?
-write_to_csv(results_df, "results")
 
-# bin_df = calculate_metrics(results_df)
-# write_to_csv(bin_df, "bin")
+write_to_csv(results_df, "results")

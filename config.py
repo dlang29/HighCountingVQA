@@ -22,7 +22,7 @@ TRAINED = False
 HF_TOKEN = "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"
 
 DATA_ROOT = "/teamspace/uploads"
-JSON_FILE = "./data/HighCountVQA_test.json"
+JSON_FILE = "./data/HighCountVQA_combined.json"
 
 EVAL_DATA_PATH = './data/evaluation'
 PLOT_DATA_PATH = './data/plots'
@@ -46,7 +46,6 @@ TEST_PATH="/teamspace/studios/this_studio/data/HighCountVQA_test.json"
 
 OUTPUT_DIR=os.path.join("/teamspace/studios/this_studio/checkpoints", MODEL_ID)
 BEST_CHECKPOINT=os.path.join(OUTPUT_DIR, 'best_checkpoint')
-#BEST_CHECKPOINT=os.path.join(OUTPUT_DIR, 'checkpoint-11368')
 EPOCHS=15
 
 # following are default huggingface training parameter

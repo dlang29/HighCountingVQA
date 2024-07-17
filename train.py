@@ -25,7 +25,7 @@ def main():
     processor = AutoProcessor.from_pretrained(config.MODEL_ID, do_rescale=False, token = config.HF_TOKEN)
     if "pali" in config.MODEL_ID:
         model = PaliGemmaForConditionalGeneration.from_pretrained(config.MODEL_ID, token = config.HF_TOKEN, torch_dtype=torch.bfloat16).to(config.DEVICE) # Training will happen automatically on device of the model
-        # to big for full fine-tuning -> freezing image encoder still to big -> use Lora Fine-tuning
+        # too big for full fine-tuning -> freezing image encoder still to big -> use Lora Fine-tuning
         lora_config = LoraConfig(
                         r=8, # this was used in an example (also often r=16, lora_alpha=16)
                         target_modules=["q_proj", "o_proj", "k_proj", "v_proj", "gate_proj", "up_proj", "down_proj"],
@@ -41,12 +41,9 @@ def main():
     _, _, val_ds = get_dataset(config.VAL_PATH, processor)
     _, _, test_ds = get_dataset(config.TEST_PATH, processor)
 
-    # # metric function for evaluation => not needed now
-    # acc_metric = evaluate.load("accuracy")
-    # acc_compute_metrics = lambda eval_pred: compute_metrics(eval_pred, metric=acc_metric)
-
     # define all training arguments
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
+    # float16 or bfloat16 based on GPU model
     no_bf_support = torch.cuda.is_available() and not torch.cuda.is_bf16_supported()
     train_args = TrainingArguments(
         output_dir=config.OUTPUT_DIR,
@@ -87,10 +84,5 @@ def main():
 
     # save best checkpoint again separately
     trainer.save_model(config.BEST_CHECKPOINT)
-
-    
-
-    # ToDo: add autoamtic call of evaluation script based on the testset after training? -> or rather manual evaluation.py call on test set
-
 
 main()
