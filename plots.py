@@ -8,7 +8,20 @@ from utils import get_csv
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 
-def create_data_distribution(dataset_name = config.JSON_FILE):
+def create_data_distribution(dataset_name: str = config.JSON_FILE) -> None:
+    """
+    Generates and saves a bar plot visualizing the distribution of labels in a specified dataset.
+
+    The function reads a JSON file containing data, converts it into a DataFrame, and counts the occurrences of each label. 
+    It then plots these counts using a bar chart and saves the plot to a specified directory.
+
+    Args:
+    dataset_name (str): The path to the JSON file that contains the dataset. The default is specified by config.JSON_FILE.
+
+    Returns:
+    None: This function does not return any value. It saves the resulting plot to 'config.PLOT_DATA_PATH/distributions',
+          naming the file after the base name of the dataset JSON file, appended with '_distribution.png'.
+    """
     with open(dataset_name, 'r') as file:
       data = json.load(file)
     df = pd.DataFrame(data)
@@ -25,7 +38,22 @@ def create_data_distribution(dataset_name = config.JSON_FILE):
     plt.savefig(os.path.join(config.PLOT_DATA_PATH + '/distributions', dataset_name.split("/")[2].split(".")[0]+"_distribution.png"))
     plt.close()
 
-def create_data_distributions(filenames):
+def create_data_distributions(filenames: List[str]) -> None:
+    """
+    Reads multiple JSON files, each containing data for a dataset, and aggregates the label counts across these datasets.
+    It generates a bar plot visualizing the distribution of labels across all provided datasets, showing the label counts 
+    side by side for comparison.
+
+    The function processes each file, counts the occurrences of each label, combines these counts into a single DataFrame, 
+    and then plots this information. It fills missing values with zeros to handle labels that do not appear in some datasets.
+
+    Args:
+    filenames (List[str]): A list of strings where each string is the path to a JSON file containing dataset information.
+
+    Returns:
+    None: The function does not return any value. It saves the resulting plot to 'config.PLOT_DATA_PATH/distributions',
+          naming the file by concatenating the base names of the JSON files, appended with '_distribution.png'.
+    """
     combined_label_counts = {}
     for filename in filenames:
         with open(filename, 'r') as file:
@@ -52,7 +80,21 @@ def create_data_distributions(filenames):
     plt.savefig(os.path.join(config.PLOT_DATA_PATH + '/distributions', "distribution_"+"_".join(processed_filenames).replace("/","")+".png"))
     plt.close()
 
-def plot_model_accuracies(model_names, dataset_name=config.JSON_FILE):
+def plot_model_accuracies(model_names: list[str], dataset_name: str = config.JSON_FILE) -> None:
+    """
+    Generates and saves a bar plot comparing the accuracy of various models on a specified dataset.
+
+    This function processes each specified model, computes the accuracy for each label within the dataset,
+    and then calculates the overall accuracy. These accuracies are then plotted in a bar chart for easy comparison.
+
+    Args:
+    model_names (list[str]): A list of identifiers for the models to be evaluated.
+    dataset_name (str): The path to the JSON file that contains the dataset. The default is specified by config.JSON_FILE.
+
+    Returns:
+    None: This function does not return any value. It saves the resulting plot to 'config.PLOT_DATA_PATH',
+          naming the file by appending the dataset base name and model names with '_Accuracy_Comparison.png'.
+    """
     dataset_name = dataset_name.split("/")[2].split(".")[0].replace("/","_")
     accuracies = {}
     overall_accuracies = {}
@@ -76,7 +118,22 @@ def plot_model_accuracies(model_names, dataset_name=config.JSON_FILE):
     plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name+"_"+processed_model_names+"_Accuracy_Comparison.png"))
     plt.close()
 
-def plot_model_abs_error(model_names, dataset_name=config.JSON_FILE):
+def plot_model_abs_error(model_names: list[str], dataset_name: str = config.JSON_FILE) -> None:
+    """
+    Generates and saves a bar plot comparing the mean absolute error of various models on a specified dataset.
+
+    This function processes each specified model, calculates the absolute error for each prediction against the true value,
+    computes the mean of these errors for each label, and also a total mean absolute error for all labels. These metrics
+    are plotted in a bar chart for comparative analysis.
+
+    Args:
+    model_names (list[str]): A list of identifiers for the models whose accuracy is being compared.
+    dataset_name (str): The path to the JSON file that contains the dataset. Defaults to config.JSON_FILE.
+
+    Returns:
+    None: This function does not return any value. It saves the resulting plot to 'config.PLOT_DATA_PATH',
+          naming the file by appending the dataset base name and model names with '_Abs_Error_Comparison.png'.
+    """
     dataset_name = dataset_name.split("/")[2].split(".")[0].replace("/","_")
     abs_errors = {}
     overall_abs_errors = {}
@@ -102,7 +159,22 @@ def plot_model_abs_error(model_names, dataset_name=config.JSON_FILE):
     plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name + "_" + processed_model_names + "_Abs_Error_Comparison.png"))
     plt.close()
 
-def plot_model_nan_count(model_names, dataset_name=config.JSON_FILE):
+def plot_model_nan_count(model_names: list[str], dataset_name: str = config.JSON_FILE) -> None:
+    """
+    Generates and saves a bar plot illustrating the count of NaN values, represented as -1 in 'formatted_pred',
+    for each label across various models in a specified dataset.
+
+    The function loads CSV data for each model, counts occurrences of NaN values (as -1) for each label, and
+    aggregates these counts across all specified models. The resulting counts are then plotted in a bar chart.
+
+    Args:
+    model_names (list[str]): A list of identifiers for the models to be evaluated.
+    dataset_name (str): The path to the JSON file that contains the dataset. The default is specified by config.JSON_FILE.
+
+    Returns:
+    None: This function does not return any value. It saves the resulting plot to 'config.PLOT_DATA_PATH',
+          naming the file by appending the dataset base name and model names with '_NaN_Count_Comparison.png'.
+    """
     dataset_name = dataset_name.split("/")[2].split(".")[0].replace("/","_")
     nan_counts = {}
     for model_id in model_names:
@@ -122,7 +194,25 @@ def plot_model_nan_count(model_names, dataset_name=config.JSON_FILE):
     plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name+"_"+processed_model_names+"_NaN_Count_Comparison.png"))
     plt.close()
 
-def create_confusion_matrices(model_name, dataset_name = config.JSON_FILE):
+def create_confusion_matrices(model_name: str, dataset_name: str = config.JSON_FILE) -> None:
+    """
+    Generates and saves confusion matrices for both formatted and non-formatted predictions
+    from a model, comparing these predictions to the true labels.
+
+    This function processes the results from a model's output stored in a CSV file, identifies the
+    most common predictions, filters the rest under an 'Other' category, and then creates confusion
+    matrices for both types of predictions. The matrices are plotted and saved to a specified directory.
+
+    Args:
+    model_name (str): The name of the model used to generate predictions. This name is used to
+                      retrieve the corresponding results file and in naming the output files.
+    dataset_name (str): The path to the JSON file that contains the dataset. The default is specified
+                        by config.JSON_FILE. This name is used in the titles of the plots.
+
+    Returns:
+    None: This function does not return any value. It saves the resulting plot to 'config.PLOT_DATA_PATH/confusion_matrices',
+          naming the file by appending the model name and dataset base name with '_Confusion_Matrix_Non_Formatted.png'.
+    """
     dataset_name = dataset_name.split("/")[2].split(".")[0].replace("/","_")
     data = get_csv("results", model_name, False)
     # Extract the relevant columns
@@ -191,7 +281,23 @@ def create_confusion_matrices(model_name, dataset_name = config.JSON_FILE):
     plt.savefig(os.path.join(config.PLOT_DATA_PATH + '/confusion_matrices', model_name.replace("/", "_").replace("-", "_") + "_" + dataset_name + "_Confusion_Matrix_Non_Formatted.png"))
     plt.close()
 
-def generate_latex_code(image_folder, latex_output):
+def generate_latex_code(image_folder: str = config.PLOT_DATA_PATH, latex_file: str = 'latex_image_inclusion.tex') -> None:
+    """
+    Generates a LaTeX file that includes all image files from a specified directory.
+
+    This function walks through the given image folder, finds all images with the extensions .png, .jpg, or .jpeg,
+    and writes LaTeX code to include these images in a document. The images are included with a width of 50% of the line width.
+    The resulting LaTeX code is written to a specified output file.
+
+    Args:
+    image_folder (str): The path to the folder containing the images to be included in the LaTeX document.
+    latex_file (str): The file path where the LaTeX document should be saved.
+
+    Returns:
+    None: This function does not return any value. It writes directly to the file specified by 'latex_output',
+          creating 'latex_image_inclusion.tex' in 'config.PLOT_DATA_PATH'.
+    """
+    latex_output = os.path.join(image_folder, latex_file)
     with open(latex_output, 'w') as f:
         f.write('\\documentclass{article}\n')
         f.write('\\usepackage{graphicx}\n')
@@ -209,7 +315,7 @@ def generate_latex_code(image_folder, latex_output):
 if __name__ == "__main__":
     plot_model_accuracies(["Salesforce/blip-vqa-base", "google/paligemma-3b-mix-224", "Salesforce/blip-vqa-base_trained", "Salesforce/blip-vqa-base_trained_lastcheckpoint"], dataset_name = "./data/HighCountVQA_test.json")
     plot_model_abs_error(["Salesforce/blip-vqa-base", "google/paligemma-3b-mix-224", "Salesforce/blip-vqa-base_trained", "Salesforce/blip-vqa-base_trained_lastcheckpoint"], dataset_name = "./data/HighCountVQA_test.json")
-    """
+
     create_confusion_matrices("Salesforce/blip2-opt-2.7b", dataset_name = "./data/HighCountVQA_combined.json")
 
     create_data_distribution("./data/tallyqa.json")
@@ -244,9 +350,5 @@ if __name__ == "__main__":
     create_confusion_matrices("google/paligemma-3b-mix-224", dataset_name = "./data/HighCountVQA_test.json")
     create_confusion_matrices("google/paligemma-3b-mix-224_trained", dataset_name = "./data/HighCountVQA_test.json")
     create_confusion_matrices("google/paligemma-3b-mix-224_trained_lastcheckpoint", dataset_name = "./data/HighCountVQA_test.json")
-
-    image_folder = config.PLOT_DATA_PATH
-    latex_output = os.path.join(config.PLOT_DATA_PATH, 'latex_image_inclusion.tex')
     
-    generate_latex_code(image_folder, latex_output)
-    """
+    generate_latex_code()
