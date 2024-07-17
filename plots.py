@@ -22,8 +22,8 @@ def create_data_distribution(dataset_name = config.JSON_FILE):
     for bar in bars.patches:
         bars.annotate(format(bar.get_height(), '.0f'), (bar.get_x() + bar.get_width() / 2, bar.get_height()),
                     ha = 'center', va = 'center', size = 12, xytext = (0, 8), textcoords = 'offset points')
-    plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name.split("/")[2].split(".")[0]+"_distribution.png"))
-
+    plt.savefig(os.path.join(config.PLOT_DATA_PATH + '/distributions', dataset_name.split("/")[2].split(".")[0]+"_distribution.png"))
+    plt.close()
 
 def create_data_distributions(filenames):
     combined_label_counts = {}
@@ -49,17 +49,22 @@ def create_data_distributions(filenames):
     plt.legend(title='Datasets')
     plt.tight_layout()
     processed_filenames = [filename.split("/")[2].split(".")[0].replace("/", "_") for filename in filenames]
-    plt.savefig(os.path.join(config.PLOT_DATA_PATH, "distribution_"+"_".join(processed_filenames).replace("/","")+".png"))
+    plt.savefig(os.path.join(config.PLOT_DATA_PATH + '/distributions', "distribution_"+"_".join(processed_filenames).replace("/","")+".png"))
+    plt.close()
 
 def plot_model_accuracies(model_names, dataset_name=config.JSON_FILE):
     dataset_name = dataset_name.split("/")[2].split(".")[0].replace("/","_")
     accuracies = {}
+    overall_accuracies = {}
     for model_id in model_names:
-        df = get_csv("results", model_id)
-        # Calculate the accuracy for each real_answer
-        df['accuracy'] = df['real_answer'].astype(str) == df['prediction'].astype(str)
-        accuracies[model_id] = df.groupby('real_answer')['accuracy'].mean()
+        df = get_csv("results", model_id, False)
+        # Calculate the overall accuracy for the entire dataset
+        df['correct'] = df['real_answer'].astype(str) == df['prediction'].astype(str)
+        overall_accuracy = df['correct'].mean()
+        overall_accuracies[model_id] = overall_accuracy
+        accuracies[model_id] = df.groupby('real_answer')['correct'].mean()
     accuracies_df = pd.DataFrame(accuracies)
+    accuracies_df.loc['All'] = overall_accuracies
     accuracies_df.plot(kind='bar', figsize=(12, 8))
     plt.title('Accuracies for Each Label for '+dataset_name)
     plt.xlabel('Label')
@@ -67,31 +72,41 @@ def plot_model_accuracies(model_names, dataset_name=config.JSON_FILE):
     plt.legend(title='Model')
     plt.grid(axis='y')
     plt.tight_layout()
-    plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name+"_Accuracy_Comparison.png"))
+    processed_model_names = "_".join([model_name.split("/")[1] for model_name in model_names])
+    plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name+"_"+processed_model_names+"_Accuracy_Comparison.png"))
+    plt.close()
 
 def plot_model_abs_error(model_names, dataset_name=config.JSON_FILE):
     dataset_name = dataset_name.split("/")[2].split(".")[0].replace("/","_")
     abs_errors = {}
+    overall_abs_errors = {}
     for model_id in model_names:
-        df = get_csv("results", model_id)
+        df = get_csv("results", model_id, False)
+        df = df[df['formatted_pred'].astype(int) != -1]
         # Calculate the absolute error for each formatted_pred
         df['abs_error'] = (df['real_answer'].astype(int) - df['formatted_pred'].astype(int)).abs()
-        abs_errors[model_id] = df.groupby('real_answer')['abs_error'].mean()  
+        # Calculate overall absolute error for the entire dataset
+        overall_abs_error = df['abs_error'].mean()
+        overall_abs_errors[model_id] = overall_abs_error
+        abs_errors[model_id] = df.groupby('real_answer')['abs_error'].mean()
     abs_errors_df = pd.DataFrame(abs_errors)
+    abs_errors_df.loc['All'] = overall_abs_errors
     abs_errors_df.plot(kind='bar', figsize=(12, 8))
-    plt.title('Absolute Errors for Each Label for ' + dataset_name)
+    plt.title('Mean of Absolute Errors for ' + dataset_name)
     plt.xlabel('Label')
     plt.ylabel('Absolute Error')
     plt.legend(title='Model')
     plt.grid(axis='y')
     plt.tight_layout()
-    plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name + "_Abs_Error_Comparison.png"))
+    processed_model_names = "_".join([model_name.split("/")[1] for model_name in model_names])
+    plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name + "_" + processed_model_names + "_Abs_Error_Comparison.png"))
+    plt.close()
 
 def plot_model_nan_count(model_names, dataset_name=config.JSON_FILE):
     dataset_name = dataset_name.split("/")[2].split(".")[0].replace("/","_")
     nan_counts = {}
     for model_id in model_names:
-        df = get_csv("results", model_id)
+        df = get_csv("results", model_id, False)
         # Count NaNs where formatted_pred is -1 for each real_answer
         df['is_nan'] = df['formatted_pred'] == -1
         nan_counts[model_id] = df.groupby('real_answer')['is_nan'].sum()
@@ -103,11 +118,13 @@ def plot_model_nan_count(model_names, dataset_name=config.JSON_FILE):
     plt.legend(title='Model')
     plt.grid(axis='y')
     plt.tight_layout()
-    plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name + "_NaN_Count_Comparison.png"))
+    processed_model_names = "_".join([model_name.split("/")[1] for model_name in model_names])
+    plt.savefig(os.path.join(config.PLOT_DATA_PATH, dataset_name+"_"+processed_model_names+"_NaN_Count_Comparison.png"))
+    plt.close()
 
 def create_confusion_matrices(model_name, dataset_name = config.JSON_FILE):
     dataset_name = dataset_name.split("/")[2].split(".")[0].replace("/","_")
-    data = get_csv("results", model_id=model_name)
+    data = get_csv("results", model_name, False)
     # Extract the relevant columns
     real_answers = data['real_answer'].astype(str)
     formatted_predictions = data['formatted_pred'].astype(str)
@@ -159,7 +176,7 @@ def create_confusion_matrices(model_name, dataset_name = config.JSON_FILE):
     plt.xticks(rotation=45)
     plt.yticks(rotation=0)
     plt.tight_layout()
-    plt.savefig(os.path.join(config.PLOT_DATA_PATH, model_name.replace("/", "_").replace("-", "_") + "_" + dataset_name + "_Confusion_Matrix_Formatted.png"))
+    plt.savefig(os.path.join(config.PLOT_DATA_PATH + '/confusion_matrices', model_name.replace("/", "_").replace("-", "_") + "_" + dataset_name + "_Confusion_Matrix_Formatted.png"))
     plt.close()
     # Plot the confusion matrix for non-formatted predictions
     plt.figure(figsize=(20, 10))
@@ -171,10 +188,30 @@ def create_confusion_matrices(model_name, dataset_name = config.JSON_FILE):
     plt.xticks(rotation=45)
     plt.yticks(rotation=0)
     plt.tight_layout()
-    plt.savefig(os.path.join(config.PLOT_DATA_PATH, model_name.replace("/", "_").replace("-", "_") + "_" + dataset_name + "_Confusion_Matrix_Non_Formatted.png"))
+    plt.savefig(os.path.join(config.PLOT_DATA_PATH + '/confusion_matrices', model_name.replace("/", "_").replace("-", "_") + "_" + dataset_name + "_Confusion_Matrix_Non_Formatted.png"))
     plt.close()
 
+def generate_latex_code(image_folder, latex_output):
+    with open(latex_output, 'w') as f:
+        f.write('\\documentclass{article}\n')
+        f.write('\\usepackage{graphicx}\n')
+        f.write('\\begin{document}\n')
+        f.write('\\section*{Images}\n')
+
+        for dirpath, dirnames, files in os.walk(image_folder):
+            for image_file in files:
+                if image_file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    relative_path = os.path.relpath(os.path.join(dirpath, image_file), start=image_folder)
+                    f.write(f'\\includegraphics[width=0.5\\linewidth]{{{"plots/"+image_file}}}\n')
+
+        f.write('\\end{document}\n')
+
 if __name__ == "__main__":
+    plot_model_accuracies(["Salesforce/blip-vqa-base", "google/paligemma-3b-mix-224", "Salesforce/blip-vqa-base_trained", "Salesforce/blip-vqa-base_trained_lastcheckpoint"], dataset_name = "./data/HighCountVQA_test.json")
+    plot_model_abs_error(["Salesforce/blip-vqa-base", "google/paligemma-3b-mix-224", "Salesforce/blip-vqa-base_trained", "Salesforce/blip-vqa-base_trained_lastcheckpoint"], dataset_name = "./data/HighCountVQA_test.json")
+    """
+    create_confusion_matrices("Salesforce/blip2-opt-2.7b", dataset_name = "./data/HighCountVQA_combined.json")
+
     create_data_distribution("./data/tallyqa.json")
     create_data_distribution("./data/HighCountVQA_val.json")
     create_data_distribution("./data/HighCountVQA_test.json")
@@ -186,9 +223,30 @@ if __name__ == "__main__":
     create_data_distributions( ["./data/tallyqa.json",
                                 "./data/HighCountVQA_combined.json"])
 
-    plot_model_accuracies(["google/paligemma-3b-mix-224","Salesforce/blip-vqa-base"])
-    plot_model_abs_error(["google/paligemma-3b-mix-224","Salesforce/blip-vqa-base"])
-    plot_model_nan_count(["google/paligemma-3b-mix-224","Salesforce/blip-vqa-base"])
+    plot_model_accuracies(["google/paligemma-3b-mix-224", "Salesforce/blip-vqa-base"], dataset_name = "./data/HighCountVQA_test.json")
+    plot_model_accuracies(["google/paligemma-3b-mix-224", "Salesforce/blip-vqa-base", "Salesforce/blip2-opt-2.7b"], dataset_name = "./data/HighCountVQA_combined.json")
 
-    create_confusion_matrices("Salesforce/blip-vqa-base")
-    create_confusion_matrices("google/paligemma-3b-mix-224")
+    plot_model_abs_error(["google/paligemma-3b-mix-224", "Salesforce/blip-vqa-base"], dataset_name = "./data/HighCountVQA_test.json")
+    plot_model_abs_error(["google/paligemma-3b-mix-224", "Salesforce/blip-vqa-base", "Salesforce/blip2-opt-2.7b"], dataset_name = "./data/HighCountVQA_combined.json")
+
+    plot_model_accuracies(["google/paligemma-3b-mix-224", "google/paligemma-3b-mix-224_trained", "google/paligemma-3b-mix-224_trained_lastcheckpoint"], dataset_name = "./data/HighCountVQA_test.json")
+    plot_model_abs_error(["google/paligemma-3b-mix-224", "google/paligemma-3b-mix-224_trained", "google/paligemma-3b-mix-224_trained_lastcheckpoint"], dataset_name = "./data/HighCountVQA_test.json")
+    plot_model_nan_count(["google/paligemma-3b-mix-224", "google/paligemma-3b-mix-224_trained", "google/paligemma-3b-mix-224_trained_lastcheckpoint"], dataset_name = "./data/HighCountVQA_test.json")
+
+    plot_model_accuracies(["Salesforce/blip-vqa-base", "Salesforce/blip-vqa-base_trained", "Salesforce/blip-vqa-base_trained_lastcheckpoint"], dataset_name = "./data/HighCountVQA_test.json")
+    plot_model_abs_error(["Salesforce/blip-vqa-base", "Salesforce/blip-vqa-base_trained", "Salesforce/blip-vqa-base_trained_lastcheckpoint"], dataset_name = "./data/HighCountVQA_test.json")
+    plot_model_nan_count(["Salesforce/blip-vqa-base", "Salesforce/blip-vqa-base_trained", "Salesforce/blip-vqa-base_trained_lastcheckpoint"], dataset_name = "./data/HighCountVQA_test.json")
+
+    create_confusion_matrices("Salesforce/blip-vqa-base", dataset_name = "./data/HighCountVQA_test.json")
+    create_confusion_matrices("Salesforce/blip-vqa-base_trained", dataset_name = "./data/HighCountVQA_test.json")
+    create_confusion_matrices("Salesforce/blip-vqa-base_trained_lastcheckpoint", dataset_name = "./data/HighCountVQA_test.json")
+
+    create_confusion_matrices("google/paligemma-3b-mix-224", dataset_name = "./data/HighCountVQA_test.json")
+    create_confusion_matrices("google/paligemma-3b-mix-224_trained", dataset_name = "./data/HighCountVQA_test.json")
+    create_confusion_matrices("google/paligemma-3b-mix-224_trained_lastcheckpoint", dataset_name = "./data/HighCountVQA_test.json")
+
+    image_folder = config.PLOT_DATA_PATH
+    latex_output = os.path.join(config.PLOT_DATA_PATH, 'latex_image_inclusion.tex')
+    
+    generate_latex_code(image_folder, latex_output)
+    """

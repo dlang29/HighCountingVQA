@@ -3,7 +3,9 @@ import config
 import os
 import pandas as pd
 
-def get_filename(name, model_id=config.MODEL_ID):
+def get_filename(name, model_id=config.MODEL_ID, trained = config.TRAINED):
+    if trained:
+        model_id = model_id + "_trained"
     filename = (model_id+config.JSON_FILE.split(".")[1]+"_"+name+'.csv').replace("/","_")
     csv_file_path = os.path.join(config.EVAL_DATA_PATH, filename)
     return csv_file_path
@@ -11,8 +13,8 @@ def get_filename(name, model_id=config.MODEL_ID):
 def write_to_csv(df, name):
     df.to_csv(get_filename(name), index=False)
 
-def get_csv(name, model_id=config.MODEL_ID):
-    return pd.read_csv(get_filename(name, model_id))
+def get_csv(name, model_id=config.MODEL_ID, trained = config.TRAINED):
+    return pd.read_csv(get_filename(name, model_id, trained))
 
 def calculate_metrics(results_df):
     # create a bin for every object number

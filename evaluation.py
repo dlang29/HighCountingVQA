@@ -3,18 +3,31 @@ import config
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from plots import plot_function
 from dataset import get_dataset
 from utils import write_to_csv, get_csv, calculate_metrics
-from transformers import AutoProcessor, AutoModelForVisualQuestionAnswering, AutoModel, PaliGemmaForConditionalGeneration
+from transformers import AutoProcessor, AutoModelForVisualQuestionAnswering, AutoModel, PaliGemmaForConditionalGeneration, Blip2ForConditionalGeneration
+from peft import get_peft_model, PeftModel
 
-test_set_length, total_iterations, test_loader = get_dataset(config.DATA_ROOT, config.JSON_FILE, config.BATCH_SIZE)
+test_set_length, total_iterations, test_loader = get_dataset(config.JSON_FILE)
+print(test_set_length, total_iterations)
 
 # Blip specific loading
 # processor instead of tokenizer -> contains BERT tokenizer + BLIP image processor
 processor = AutoProcessor.from_pretrained(config.MODEL_ID, do_rescale=False, token = config.HF_TOKEN) #do_rescale false, because ToTensor() already does that
-# model = PaliGemmaForConditionalGeneration.from_pretrained(config.MODEL_ID, token = config.HF_TOKEN, torch_dtype=torch.bfloat16).to(config.DEVICE)
-model = AutoModelForVisualQuestionAnswering.from_pretrained(config.MODEL_ID, token = config.HF_TOKEN, torch_dtype=torch.bfloat16).to(config.DEVICE)
+
+if config.TRAINED:
+    if 'pali' in config.MODEL_ID:
+        model = PaliGemmaForConditionalGeneration.from_pretrained(config.BEST_CHECKPOINT, token = config.HF_TOKEN, torch_dtype=torch.bfloat16).to(config.DEVICE)
+        model = PeftModel.from_pretrained(model, config.BEST_CHECKPOINT)
+    else:
+        model = AutoModelForVisualQuestionAnswering.from_pretrained(config.BEST_CHECKPOINT, token = config.HF_TOKEN, torch_dtype=torch.bfloat16).to(config.DEVICE)
+        
+else:
+    if 'pali' in config.MODEL_ID:
+        model = PaliGemmaForConditionalGeneration.from_pretrained(config.MODEL_ID, token = config.HF_TOKEN, torch_dtype=torch.bfloat16).to(config.DEVICE)
+    else:
+         model = AutoModelForVisualQuestionAnswering.from_pretrained(config.MODEL_ID, token = config.HF_TOKEN, torch_dtype=torch.float16).to(config.DEVICE)
+
 
 # Initialize a dictionary to hold all data
 data_collection = {"image_path": []
@@ -45,5 +58,6 @@ results_df['real_answer'] = results_df['real_answer'].astype(int)
 results_df['formatted_pred'] = results_df['formatted_pred'].astype(int)
 # why pass config module?
 write_to_csv(results_df, "results")
-bin_df = calculate_metrics(results_df)
-write_to_csv(bin_df, "bin")
+
+# bin_df = calculate_metrics(results_df)
+# write_to_csv(bin_df, "bin")
