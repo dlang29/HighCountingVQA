@@ -26,6 +26,12 @@ The project utilizes the following datasets:
     - **COCO**: Contains diverse contextual images.
     - **Visual Genome**: Provides dense image annotations.
 
+The images used in the dataset are derived from COCO and Visual Genome. All the images can be downloaded from the publicly available datasets below:
+- [Visual Genome dataset](https://homes.cs.washington.edu/~ranjay/visualgenome/api.html)
+- [COCO train/val images](https://visualqa.org/download.html)
+
+These images should be placed into `/teamspace/studios/this_studio/data/`.
+
 ## Models
 The project compares several state-of-the-art VQA models, including:
 - **BLIP**: A Vision Transformer combined with BERT.
